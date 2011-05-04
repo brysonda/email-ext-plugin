@@ -3,6 +3,11 @@ package hudson.plugins.emailext;
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.Launcher;
+import hudson.matrix.MatrixAggregatable;
+import hudson.matrix.MatrixAggregator;
+import hudson.matrix.MatrixBuild;
+import hudson.matrix.MatrixConfiguration;
+import hudson.matrix.MatrixProject;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.BuildListener;
@@ -44,7 +49,7 @@ import java.util.logging.Logger;
 /**
  * {@link Publisher} that sends notification e-mail.
  */
-public class ExtendedEmailPublisher extends Notifier {
+public class ExtendedEmailPublisher extends Notifier implements MatrixAggregatable {
 
     private static final Logger LOGGER = Logger.getLogger(ExtendedEmailPublisher.class.getName());
 
@@ -117,6 +122,13 @@ public class ExtendedEmailPublisher extends Notifier {
      * The default body of the emails for this project.  ($PROJECT_DEFAULT_BODY)
      */
     public String defaultContent;
+    
+    
+    /**
+     * The multiplier setting for matrix jobs.
+     */
+    private MatrixJobMultiplier matrixMultiplier = MatrixJobMultiplier.ONLY_CONFIGURATIONS;
+    
 
     /**
      * Get the list of configured email triggers for this project.
@@ -166,12 +178,28 @@ public class ExtendedEmailPublisher extends Notifier {
 
     @Override
     public boolean prebuild(AbstractBuild<?, ?> build, BuildListener listener) {
-        return _perform(build, listener, true);
+        if (build.getProject() instanceof MatrixConfiguration) {
+            if (getMatrixNotifier() == MatrixJobMultiplier.ONLY_CONFIGURATIONS || getMatrixNotifier() == MatrixJobMultiplier.ALL) {
+                return _perform(build, listener, true);
+            }
+        } else {
+            return _perform(build, listener, true);
+        }
+        
+        return true;
     }
 
     @Override
     public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
-        return _perform(build, listener, false);
+        if (build.getProject() instanceof MatrixConfiguration) {
+            if (getMatrixNotifier() == MatrixJobMultiplier.ONLY_CONFIGURATIONS || getMatrixNotifier() == MatrixJobMultiplier.ALL) {
+                return _perform(build, listener, false);
+            }
+        } else {
+            return _perform(build, listener, false);
+        }
+        
+        return true;
     }
 
     private boolean _perform(AbstractBuild<?, ?> build, BuildListener listener, boolean forPreBuild) {
@@ -412,4 +440,41 @@ public class ExtendedEmailPublisher extends Notifier {
     public static final class DescriptorImpl
             extends ExtendedEmailPublisherDescriptor {
     }
+    
+    
+    public MatrixJobMultiplier getMatrixNotifier() {
+        return this.matrixMultiplier;
+    }
+    
+    public void setMatrixNotifier(MatrixJobMultiplier matrixMultiplier) {
+        this.matrixMultiplier = matrixMultiplier;
+    }
+    
+    
+    public MatrixAggregator createAggregator(MatrixBuild build, Launcher launcher, BuildListener listener) {
+        return new MatrixAggregator(build, launcher, listener) {
+
+            @Override
+            public boolean startBuild() throws InterruptedException, IOException {
+                if (getMatrixNotifier() == MatrixJobMultiplier.ALL || getMatrixNotifier() == MatrixJobMultiplier.ONLY_PARENT) {
+                    _perform(build, listener, true);
+                }
+                return super.startBuild();
+            }
+
+            @Override
+            public boolean endBuild() throws InterruptedException, IOException {
+                if (getMatrixNotifier() == MatrixJobMultiplier.ALL || getMatrixNotifier() == MatrixJobMultiplier.ONLY_PARENT) {
+                    _perform(build, listener, false);
+                }
+                return super.endBuild();
+            }
+        };
+    }
+    
+    // Helper method for the config.jelly
+    public boolean isMatrixProject(AbstractProject<?, ?> project) {
+        return project instanceof MatrixProject;
+    }
+
 }

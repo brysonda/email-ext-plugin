@@ -1,14 +1,19 @@
 package hudson.plugins.emailext.plugins.content;
 
 import hudson.Functions;
+import hudson.matrix.MatrixBuild;
+import hudson.matrix.MatrixProject;
+import hudson.matrix.MatrixRun;
 import hudson.maven.reporters.SurefireAggregatedReport;
 import hudson.model.AbstractBuild;
+import hudson.model.AbstractProject;
 import hudson.model.Action;
 import hudson.tasks.junit.TestResult;
 import hudson.tasks.junit.TestResultAction;
 import hudson.tasks.test.AggregatedTestResultAction;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class JellyScriptContentBuildWrapper {
@@ -60,5 +65,16 @@ public class JellyScriptContentBuildWrapper {
             }
         }
         return result;
+    }
+
+    public List<MatrixRun> getMatrixBuildRuns() {    
+    	if (build instanceof MatrixBuild){
+    		return ((MatrixBuild)this.build).getRuns();
+    	}
+    	return Collections.emptyList();
+    }
+    
+    public boolean isMatrixProject(AbstractProject<?, ?> project) {
+        return project instanceof MatrixProject;
     }
 }

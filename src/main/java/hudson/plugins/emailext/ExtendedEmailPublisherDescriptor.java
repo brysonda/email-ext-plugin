@@ -84,6 +84,7 @@ public class ExtendedEmailPublisherDescriptor extends BuildStepDescriptor<Publis
      */
     private String defaultBody;
 
+
     private boolean overrideGlobalSettings;
     
     /**
@@ -203,7 +204,8 @@ public class ExtendedEmailPublisherDescriptor extends BuildStepDescriptor<Publis
     public String getListId() {
         return listId;
     }
-
+    
+    
     public boolean isApplicable(Class<? extends AbstractProject> jobType) {
         return true;
     }
@@ -216,6 +218,10 @@ public class ExtendedEmailPublisherDescriptor extends BuildStepDescriptor<Publis
 
         // Save configuration for each trigger type
         ExtendedEmailPublisher m = new ExtendedEmailPublisher();
+        if (formData.has("matrixNotifier")) {
+            MatrixJobMultiplier matrixMultiplier = MatrixJobMultiplier.valueOf(formData.getString("matrixNotifier"));
+            if (matrixMultiplier != null) m.setMatrixNotifier(matrixMultiplier);
+        }
         m.recipientList = listRecipients;
         m.contentType = formData.getString("project_content_type");
         m.defaultSubject = formData.getString("project_default_subject");

@@ -38,6 +38,10 @@
       <name>Seiji Sogabe</name>
       <email>s.sogabe@gmail.com</email>
     </developer>
+    <developer>
+    	<id>brysonda</id><name>David M. Bryson</name><email>david@programerror.com</email>
+    	
+    </developer>
   </developers>
 
   <dependencies>

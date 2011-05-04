@@ -1,0 +1,107 @@
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define">
+
+<style>
+body,table,td,th,p { font-family: 'Helvetica', 'sans serif'; font-size:12px; color:black; }
+.heading { font-size: 15px; font-weight: bold; }
+td.bg1 { color:white; background-color:#0000C0; font-size:14px; }
+td.bg2 { color:white; background-color:#4040FF; font-size:13px; }
+td.bg3 { color:white; background-color:#8080FF; }
+td.test_passed { color:blue; }
+td.test_failed { color:red; }
+td.console { font-size: 11px; font-family: 'Monaco', 'Courier New', 'monospace'; }
+</style>
+<body>
+<j:set var="spc" value="&amp;nbsp;&amp;nbsp;" />
+<table><tr><td>
+<j:choose>
+  <j:when test="${build.result=='SUCCESS'}"><img src="${rooturl}static/e59dfe28/images/32x32/blue.gif" /></j:when>
+  <j:when test="${build.result=='FAILURE'}"><img src="${rooturl}static/e59dfe28/images/32x32/red.gif" /></j:when>
+  <j:otherwise><img src="${rooturl}static/e59dfe28/images/32x32/yellow.gif" /></j:otherwise>
+</j:choose>
+</td><td class="heading">
+BUILD ${build.result}
+</td></tr></table>
+<table>
+<tr><td>Build URL</td><td><a href="${rooturl}${build.url}">${rooturl}${build.url}</a></td></tr>
+<tr><td>Project:</td><td>${project.name}</td></tr>
+<tr><td>Date of build:</td><td>${it.timestampString}</td></tr>
+<tr><td>Build duration:</td><td>${build.durationString}</td></tr>
+</table>
+<br />
+
+<!-- For matrix project output status of all matrix builds-->
+<j:if test="${it.isMatrixProject(project)}">
+  <j:forEach var="matrixRun" items="${it.getMatrixBuildRuns()}" varStatus="loop">
+  	<table><tr><td>
+    <j:choose>
+      <j:when test="${matrixRun.result=='SUCCESS'}"><img src="${rooturl}static/e59dfe28/images/16x16/blue.gif" /></j:when>
+      <j:when test="${matrixRun.result=='FAILURE'}">
+        <a href="#Log_${matrixRun.getParent().getDisplayName()}"><img src="${rooturl}static/e59dfe28/images/16x16/red.gif" /></a>
+      </j:when>
+      <j:otherwise><img src="${rooturl}static/e59dfe28/images/16x16/yellow.gif" /></j:otherwise>
+    </j:choose>
+    </td><td>
+    <strong>${matrixRun.getParent().getDisplayName()}</strong> (<a href="${rooturl}${matrixRun.url}">build details</a>) ${matrixRun.durationString}
+    </td></tr></table>
+  </j:forEach>
+  <br />
+</j:if>
+
+<!-- CHANGE SET -->
+<j:if test="${changeSet!=null}">
+  <j:set var="hadChanges" value="false" />
+  <table>
+    <tr><td class="bg1" colspan="2"><strong>CHANGES</strong></td></tr>
+    <j:forEach var="cs" items="${changeSet.logs}" varStatus="loop">
+      <j:set var="hadChanges" value="true" />
+      <j:set var="aUser" value="${cs.hudsonUser}"/>
+      <tr>
+        <td colspan="2" class="bg2">${spc}Revision <strong>${cs.revision}</strong> by
+          <strong><j:choose>
+            <j:when test="${aUser!=null}">${aUser.displayName}:</j:when>
+            <j:otherwise>${cs.user}:</j:otherwise>
+          </j:choose></strong>
+          <strong>(${cs.msgAnnotated})</strong>
+        </td>
+      </tr>
+      <j:forEach var="p" items="${cs.paths}">
+        <tr>
+          <td width="10%">${spc}${p.editType.name}</td>
+          <td>${p.value}</td>
+        </tr>
+      </j:forEach>
+    </j:forEach>
+    <j:if test="${!hadChanges}">
+      <tr><td colspan="2">No Changes</td></tr>
+    </j:if>
+  </table>
+<br />
+</j:if>
+
+   
+<!-- CONSOLE OUTPUT -->
+<j:getStatic var="resultFailure" field="FAILURE" className="hudson.model.Result"/>
+<j:if test="${build.result==resultFailure}">
+<table>
+<tr><td class="bg1"><strong>CONSOLE OUTPUT</strong></td></tr>
+<j:forEach var="line" items="${build.getLog(100)}"><tr><td class="console">${line}</td></tr></j:forEach>
+</table>
+<br />
+</j:if>
+
+<!-- CONSOLE OUTPUT For matrix projects-->
+<j:if test="${it.isMatrixProject(project)}">
+  <j:forEach var="matrixRun" items="${it.getMatrixBuildRuns()}" varStatus="loop">
+    <table>                  
+      <j:if test="${matrixRun.result==resultFailure}">  
+        <a name="#Log_${matrixRun.getParent().getDisplayName()}"> </a>
+        <tr><td class="bg1"><strong>CONSOLE OUTPUT - ${matrixRun.getParent().getDisplayName()}</strong></td></tr>                 
+        <j:forEach var="line" items="${matrixRun.getLog(30)}"><tr><td class="console">${line}</td></tr></j:forEach>             
+      </j:if>
+    </table>
+    <br />
+  </j:forEach>
+</j:if>            
+
+</body>
+</j:jelly>

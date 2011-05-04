@@ -87,12 +87,21 @@
 		<td colspan="2"><div id="${secId}contentTokenHelpConf" class="help" style="display:none">${contentTokenText}</div></td>
 		<td></td>
 	</tr>
+        
 	
 	<!-- Configure advanced properties like per-build-result status email contents, 
 		 whether or not to send email to developers who made changes, and whether or
 		 not to send email to the global list of devs-->
 	<f:advanced> 
 		
+    <!-- <j:if test="${instance.isMatrixProject(it)}"> -->
+        <f:entry title="${%Notify for matrix projects}" field="matrixNotifier" help="/plugin/email-ext/help/projectConfig/matrixNotifier.html">
+            <f:enum field="matrixNotifier">
+                ${it.getLabel()}
+            </f:enum>
+        </f:entry>
+    <!-- </j:if> -->
+
 		<tr>
 			<td></td>
 			<td colspan="3" style="margin-left:10px">

@@ -32,7 +32,7 @@ public class BuildStatusContent implements EmailContent {
 
         // Build can be "building" when the pre-build trigger is used.
         // Reporting "success", "still failing", etc doesn't make sense in this case.
-        if (build.isBuilding()) {
+        if (build.isBuilding() && build.getResult() == null) {
             return "Building";
         }
 
